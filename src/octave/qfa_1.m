@@ -78,6 +78,23 @@ function y=qfa(f,a,b,patience=10,epsz=1e-12,wanna_print=false)
   0.012261863082965059183757260672587997395
   0.0012771392081736909323116219667943805590
   ] ;
+  if a==b
+    y=0 ; return ;
+  end
+  if a==-inf && b==inf
+    y=qfa(@(x)f(x./(1-x.^2)).*(1+x.^2)./(1-x.^2).^2,-1,1,patience,epsz,wanna_print) ;
+    return ;
+  end
+  if isfinite(a) && b==inf
+    y=qfa(@(x)f(a+x./(1-x))./(1-x).^2,0,1,patience,epsz,wanna_print) ;
+    return ;
+  end
+  if a==-inf && isfinite(b)
+    y=qfa(@(x)f(b-x./(1-x))./(1-x).^2,0,1,patience,epsz,wanna_print) ;
+    return ;
+  end
+  id=@(x)merge(isfinite(x),x,zeros(size(x))) ;
+  f=@(x)id(f(x)) ;
   if wanna_print
     printf("a=%f,b=%f,patience=%d\n",a,b,patience)
   end
@@ -101,6 +118,10 @@ function y=qfa(f,a,b,patience=10,epsz=1e-12,wanna_print=false)
 end
 
 %{
+	This method of numerical quadrature should be adequate if the
+	integrand is holomorphic in a complex neighborhood of the compact
+	segment of integration.  It is not prepared for singular integrals.
+
 	Sample run.
 
 (12:52) gp > default(parisizemax,1g)
@@ -133,5 +154,81 @@ ans = 1.8502e-13
 ans = -5.5511e-17
 >> qfa(@(x)exp(x).*cos(x),0,pi/2)-0.5*(-1+exp(0.5*pi))
 ans = -4.4409e-16
->>
+>> qfa(@(x)exp(-pi*x.^2),-inf,inf)-1
+ans = 0
+>> qfa(@sqrt,0,1)-2/3
+ans = -1.5170e-10
+>> qfa(@sqrt,0,1,30,1e-16)-2/3
+ans = -1.1102e-16
+>> qfa(@(x)1./sqrt(x),0,1)
+ans = 1.9982
+>> qfa(@(x)1./sqrt(x),0,1)-2
+ans = -1.8255e-03
+>> qfa(@(x)1./sqrt(x),0,1,30,1e-16)-2
+ans = -1.7827e-06
+>> qfa(@(x)1./sqrt(x),0,1,100,1e-16)-2
+ans = 0
+>> qfa(@(x)exp(-3*x).*cos(2*x),0,inf)-3/13
+ans = -5.5511e-17
+>> qfa(@(x)abs(x-12).*exp(-abs(x-12)),-inf,inf)-2
+ans = -4.8775e-05
+>> qfa(@(x)abs(x-12).*exp(-abs(x-12)),-inf,inf,30,1e-16)-2
+ans = -4.4409e-16
+>> qfa(@(x)1./(1+x.^2),-inf,inf)-pi
+ans = -4.9888e-06
+>> qfa(@(x)1./(1+x.^2),-inf,inf,50,1e-16)-pi
+ans = 0
+>> qfa(@(x)1./(1+x.^2),0,inf)-pi/2
+ans = -6.2360e-07
+>> qfa(@(x)1./(1+x.^2),0,inf,50,1e-16)-pi/2
+ans = 0
+>> qfa(@(x)1./(1+x.^2),0,1)-pi/4
+ans = 2.2204e-16
+>> qfa(@(x)x.*log(x),0,1)-(-1/4)
+ans = 4.2077e-14
+>> qfa(@(x)x.*log(x),0,1,20,1e-16)-(-1/4)
+ans = 0
+>> qfa(@(x)log(abs(x-0.123)),0,1)-(-1.372859970960925)
+ans = -2.2678e-05
+>> qfa(@(x)log(abs(x-0.123)),0,1,50,1e-16)-(-1.372859970960925)
+ans = 4.2188e-15
+>> qfa(@(x)log(abs(x-0.123)),0,1,50,1e-17)-(-1.372859970960925)
+ans = 0
+>> qfa(@(x)x.^-0.25,0,1)-4/3
+ans = -3.3388e-05
+>> qfa(@(x)x.^-0.25,0,1,60,1e-16)-4/3
+ans = -2.2204e-16
+%	Terrible struggle begin
+>> qfa(@(x)x.^-0.75,0,1)-4
+ans = -0.1241
+>> max_recursion_depth (2^16)
+>> qfa(@(x)x.^-0.75,0,1,200,1e-16)-4
+ans = -8.8818e-16
+%	Terrible struggle end
+>> global c
+>> function y = id (x)
+  global c
+  c += numel (x);
+  y = x;
+endfunction
+>> n=1600;i=(0:n-1).' ; a=randn(n,1) ; b=rand(n,1)+i ; f=@(x)arrayfun(@(xi)sum(a.*cos(b.*xi),1),x) ; F=@(x)sum(a.*sin(b.*x)./b); c=0;qfa (@(x)f(id(x)),a=0,b=2*pi)-(F(b)-F(a)) , plot(xx=linspace(a,b,1000),f(xx)) , c
+ans = 3.6887e-14
+c = 59363
+>> qfa(@(x)sqrt(1-x.^2),-1,1)-pi/2
+ans = -1.2136e-09
+>> qfa(@(x)sqrt(1-x.^2),-1,1,30,1e-16)-pi/2
+ans = 0
+>> dblquad (@(x,y)exp(-pi*(x.^2+y.^2)),-4,4,-4,4,:,@(f,a,b,t)qfa(f,a,b,3,1e-12))-1
+ans = 0
+>> dblquad (@(x,y)exp(-pi*(x.^2+y.^2)),-inf,inf,-inf,inf,:,@(f,a,b,t)qfa(f,a,b,3,1e-12))-1
+ans = 0
+>> dblquad (@(x,y)1./(1-x.*y),0,1,0,1,:,@(f,a,b,t)qfa(f,a,b,25,1e-12))-pi^2/6
+ans = -4.3555e-11
+>> dblquad (@(x,y)1./(1-x.*y),0,1,0,1,:,:)-pi^2/6
+warning: quadcc: Error tolerance not met.  Estimated error: 7.29043
+ans = 2.9461e-08
+>> dblquad (@(x,y)1./(1+x.*y),0,1,0,1,:,:)-pi^2/12
+ans = 0
+>> dblquad (@(x,y)1./(1+x.*y),0,1,0,1,:,@(f,a,b,t)qfa(f,a,b,3,1e-12))-pi^2/12
+ans = 1.1102e-16
 %}
