@@ -90,6 +90,7 @@ def qfa(f,a=0,b=1,patience=10,epsz=1e-12,wanna_print=False):
   0.0012771392081736909323116219667943805590
   ] 
   if a==b: return 0
+  if a>b: return -qfa(f,b,a,patience,epsz,wanna_print)
   if a==-math.inf and b==math.inf:
       return qfa(lambda x:f(div(x,(1-x**2)))*div((1+x**2),(1-x**2)**2),-1,1,patience,epsz,wanna_print)
   if math.isfinite(a) and b==math.inf:

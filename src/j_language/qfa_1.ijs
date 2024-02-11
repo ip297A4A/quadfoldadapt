@@ -7,7 +7,7 @@ NB. integral \int_a^b f(x) dx.
   Yb=.2 :'(u >:n-%y)%*:y'
   Ya=.2 :'(u <:n+%y)%*:y'
   Y=.1 :'(u (y-0.5)%y*-.y)*(0.5-y*-.y)%*:y*-.y'
-  if. a=b do. 0 return. end.
+NB.  if. a=b do. 0 return. end.
   if. a>b do. -(u qfa(b,a,patience,epsz,wanna_print)) return. end.
   if. (a=__)*.(__<b)*.(b<_) do.
     (u Yb b)qfa(0 1,patience,epsz,wanna_print) return.
@@ -73,6 +73,8 @@ _1.21357e_9
 _1.04805e_13
    3 :'%:-.*:y'qfa _1 1 20 1e_15-0.5p1
 _3.70814e_14
+   3 :'%:-.*:y'qfa _1 1 30 1e_16-0.5p1
+0
    f=:3 :'(1+^y)%(y+^y)'
    F=:3 :'^.y+^y'
    f qfa ''-(F 1)-F 0
@@ -125,5 +127,11 @@ _2.22045e_16
 0
    4 :'%>:x*y'qqfa 0 1 0 1-1r12p2
 2.22045e_16
+   3 :'2%((^y)+(^-y))'qfa __ _-1p1
+4.44089e_16
+   3 :'%>:^y'qfa 0 _-^.2
+0
+   3 :'1 o. 1 o. 2 o. 2 o. y'qfa 0 1p1-1.97070738124815285059704144196
+0
    clear''
 )

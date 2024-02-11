@@ -81,6 +81,9 @@ function y=qfa(f,a,b,patience=10,epsz=1e-12,wanna_print=false)
   if a==b
     y=0 ; return ;
   end
+  if a>b
+    y=-qfa(f,b,a,patience,epsz,wanna_print) ; return
+  end
   if a==-inf && b==inf
     y=qfa(@(x)f(x./(1-x.^2)).*(1+x.^2)./(1-x.^2).^2,-1,1,patience,epsz,wanna_print) ;
     return ;
@@ -97,10 +100,6 @@ function y=qfa(f,a,b,patience=10,epsz=1e-12,wanna_print=false)
   f=@(x)id(f(x)) ;
   if wanna_print
     printf("a=%f,b=%f,patience=%d\n",a,b,patience)
-  end
-  if a==b 
-    y=0*f((a+b)/2) ;
-    return
   end
   fxx=f((a+b)/2+(b-a)/2*_qfxx) ;
   fx=fxx(2*(1:length(_qfc))-1) ;
